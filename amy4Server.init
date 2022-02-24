@@ -1,0 +1,90 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          amy4Server
+# Required-Start:    $all
+# Required-Stop:     $all
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start amy4Server daemon at boot time
+# Description:       Start amy4Server daemon at boot time
+### END INIT INFO
+START=99
+
+usage()
+{
+	if type systemctl && [ -z "$(systemctl --failed|grep -q 'Host is down')" ]; then
+		us="systemctl [start|stop|status|restart] amy4Server.service"
+	else
+		us="$0 [start|stop|status|restart]"
+	fi &>/dev/null
+	echo "Usage:
+	$us
+	Config file is [amy4Server_install_dir]/amy4Server.json"
+}
+
+status()
+{
+	{
+		grep -q amy4Server /proc/`cat "[amy4Server_install_dir]/run.pid" 2>/dev/null`/comm 2>/dev/null && \
+			echo "amy4Server is running..." || \
+			echo "amy4Server is stopped..."
+	} 2>/dev/null
+}
+
+
+start()
+{
+	status | grep running && return 0
+	echo -n "Starting amy4Server:"
+	for server_port in [amy4Server_tcp_port_list]; do
+		iptables -I INPUT -p 6 --dport $server_port -m comment --comment "amy4Server server port" -j ACCEPT
+		ip6tables -I INPUT -p 6 --dport $server_port -m comment --comment "amy4Server server port" -j ACCEPT
+	done 2>/dev/null
+	cd "[amy4Server_install_dir]"
+	./amy4Server -config amy4Server.json -daemon >/dev/null
+	sleep 1
+	grep -q amy4Server /proc/`cat [amy4Server_install_dir]/run.pid 2>/dev/null`/comm && \
+		echo -e "\033[60G[\033[32m  OK  \033[0m]" || \
+		echo -e "\033[60G[\033[31mFAILED\033[0m]"
+}
+
+stop()
+{
+	for server_port in [amy4Server_tcp_port_list]; do
+		while iptables -D INPUT -p 6 --dport $server_port -m comment --comment "amy4Server server port" -j ACCEPT; do :;done
+		while ip6tables -D INPUT -p 6 --dport $server_port -m comment --comment "amy4Server server port" -j ACCEPT; do :;done
+	done 2>/dev/null
+	status | grep stopped && return 0
+	echo -n "Stopping amy4Server:"
+	kill `cat [amy4Server_install_dir]/run.pid 2>/dev/null` 2>/dev/null
+	sleep 1
+	grep -q amy4Server /proc/`cat [amy4Server_install_dir]/run.pid`/comm 2>/dev/null && \
+		echo -e "\033[60G[\033[31mFAILED\033[0m]" || \
+		echo -e "\033[60G[\033[32m  OK  \033[0m]"
+}
+
+restart()
+{
+	stop
+	start
+}
+
+systemdStart()
+{
+	status | grep running && return 0
+	cd "[amy4Server_install_dir]"
+	for server_port in [amy4Server_tcp_port_list]; do
+		iptables -I INPUT -p 6 --dport $server_port -m comment --comment "amy4Server server port" -j ACCEPT
+		ip6tables -I INPUT -p 6 --dport $server_port -m comment --comment "amy4Server server port" -j ACCEPT
+	done 2>/dev/null
+	./amy4Server -config amy4Server.json >/dev/null
+}
+
+systemdRestart()
+{
+	stop
+	systemdStart
+}
+
+${1:-usage} 2>/dev/null
