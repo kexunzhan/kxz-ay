@@ -25,13 +25,13 @@ Error() {
 #Make amy4Server start cmd
 Config() {
 	[ -n "$amy4Server_install_dir" ] && return  #Variables come from the environment
-	echo -n "璇疯緭鍏my4Server端口姟绔彛: "
+	echo -n "璇疯緭鍏my4Server鏈嶅姟绔彛: "
 	read amy4Server_port
-	echo -n "璇疯緭鍏my4Server密钥瘉瀵嗙爜: "
+	echo -n "璇疯緭鍏my4Server楠岃瘉瀵嗙爜: "
 	read amy4Server_verify_key
-	echo -n "璇疯緭鍏my4Server身份验证�(Secret): "
+	echo -n "璇疯緭鍏my4Server鎺堟潈鐮�(Secret): "
 	read amy4Server_auth_secret
-	echo -n "璇疯緭鍏my4Server秘密_密码�(Secret)鐨勫瘑鐮�: "
+	echo -n "璇疯緭鍏my4Server鎺堟潈鐮�(Secret)鐨勫瘑鐮�: "
 	read amy4Server_secret_password
 	echo -n "鏈嶅姟鍣ㄦ槸鍚︽敮鎸両PV6[n]: "
 	read ipv6_support
@@ -69,8 +69,8 @@ InstallFiles() {
 	fi
 	mkdir -p "$amy4Server_install_dir" || Error "Create amy4Server install directory failed."
 	cd "$amy4Server_install_dir" || exit 1
-	$download_tool_cmd amy4Server https://github.com/kexunzhan/amy4/blob/main/linux_${machine}${softfloat} || Error "amy4Server download failed."
-	$download_tool_cmd amy4Server.init https://github.com/kexunzhan/amy4/blob/main/amy4Server.init || Error "amy4Server.init download failed."
+	$download_tool_cmd amy4Server https://github.com/kexunzhan/kxz-ay/blob/main/linux_${machine}${softfloat} || Error "amy4Server download failed."
+	$download_tool_cmd amy4Server.init https://github.com/kexunzhan/kxz-ay/blob/main/amy4Server.init || Error "amy4Server.init download failed."
 	[ -f '/etc/rc.common' ] && rcCommon='/etc/rc.common'
 	sed -i "s~#!/bin/sh~#!$SHELL $rcCommon~" amy4Server.init
 	sed -i "s~\[amy4Server_install_dir\]~$amy4Server_install_dir~g" amy4Server.init
@@ -90,7 +90,7 @@ InstallFiles() {
 	EOF
 	chmod -R +rwx "$amy4Server_install_dir" /etc/init.d/amy4Server
 	if type systemctl && [ -z "$(systemctl --failed|grep -q 'Host is down')" ]; then
-		$download_tool_cmd /lib/systemd/system/amy4Server.service https://github.com/kexunzhan/amy4/blob/main/amy4Server.service || Error "amy4Server.service download failed."
+		$download_tool_cmd /lib/systemd/system/amy4Server.service https://github.com/kexunzhan/kxz-ay/blob/main/amy4Server.service || Error "amy4Server.service download failed."
 		chmod +rwx /lib/systemd/system/amy4Server.service
 		sed -i "s~\[amy4Server_install_dir\]~$amy4Server_install_dir~g"  /lib/systemd/system/amy4Server.service
 		systemctl daemon-reload
@@ -129,21 +129,4 @@ Uninstall() {
 		read amy4Server_install_dir
 	fi
 	Delete >/dev/null 2>&1 && \
-		echo $echo_e_arg "\n\033[44;37mamy4Server uninstall success.\033[0m" || \
-		echo $echo_e_arg "\n\033[41;37mamy4Server uninstall failed.\033[0m"
-}
-
-#script initialization
-ScriptInit() {
-	emulate bash 2>/dev/null #zsh emulation mode
-	if echo -e ''|grep -q 'e'; then
-		echo_e_arg=''
-		echo_E_arg=''
-	else
-		echo_e_arg='-e'
-		echo_E_arg='-E'
-	fi
-}
-
-ScriptInit
-echo $*|grep -qi uninstall && Uninstall || Install
+		echo $echo_e_arg "\n\033[44;37mamy4Server uninsta
